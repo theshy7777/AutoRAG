@@ -43,19 +43,31 @@ from autorag.strategy import measure_speed, filter_by_threshold, select_best
 logger = logging.getLogger("AutoRAG")
 
 
-
-import fcntl  # Use portalocker for Windows
+import portalocker  # Use portalocker for Windows
 def write_summary(df_path, df: pd.DataFrame):
     """Safely appends a DataFrame to summary.csv using file locking."""
     file_exists = os.path.isfile(df_path)  # Check if file exists
 
     with open(df_path, "a") as f:
         try:
-            fcntl.flock(f, fcntl.LOCK_EX)  # Lock the file for exclusive access
+            portalocker.lock(f, portalocker.LOCK_EX)  # Lock the file for exclusive access
             df.to_csv(f, header=not file_exists, index=False)  # Append new rows without headers
             f.flush()  # Ensure data is written immediately
         finally:
-            fcntl.flock(f, fcntl.LOCK_UN)  # Unlock the file
+            portalocker.unlock(f)  # Unlock the file
+
+# import fcntl  # Use portalocker for Windows
+# def write_summary(df_path, df: pd.DataFrame):
+#     """Safely appends a DataFrame to summary.csv using file locking."""
+#     file_exists = os.path.isfile(df_path)  # Check if file exists
+
+#     with open(df_path, "a") as f:
+#         try:
+#             fcntl.flock(f, fcntl.LOCK_EX)  # Lock the file for exclusive access
+#             df.to_csv(f, header=not file_exists, index=False)  # Append new rows without headers
+#             f.flush()  # Ensure data is written immediately
+#         finally:
+#             fcntl.flock(f, fcntl.LOCK_UN)  # Unlock the file
 
 
 class TestEvaluator(Evaluator):
